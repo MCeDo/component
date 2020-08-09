@@ -42,10 +42,18 @@ public class StringTurboCache extends AbstractTwinTurboCache implements StringTu
         return result;
     }
 
+    /**
+     * set方法只对生效中的缓存操作，如：list类型的zadd操作，只对生效中的缓存追加
+     * 缓存的切换和初始化由其他方法完成，不在这里处理
+     * @param key
+     * @param value
+     * @param expireSeconds
+     */
     @Override
     public void set(String key, String value, int expireSeconds) {
-        // 切待更新版本key
-        TwinTurboKey curCacheKey = this.switchCacheKey(key);
+        // 当前生效中的key
+        // TODO 这里的操作是否存在问题
+        TwinTurboKey curCacheKey = this.getCurCacheKey(key);
         curCacheKey.setExpireSeconds(expireSeconds);
         this.getJedis().setex(curCacheKey.getCurKey(), getRealExpireSecond(), value);
         // TODO 考虑自定义扩展时，是否可以对外屏蔽以下方法的调用
@@ -53,7 +61,7 @@ public class StringTurboCache extends AbstractTwinTurboCache implements StringTu
     }
 
     @Override
-    protected void rebuildCache(TwinTurboKey turboKey, Object data) {
-        this.getJedis().set(turboKey.getCurKey(), (String)data);
+    public void rebuildCache(TwinTurboKey turboKey, Object data) {
+        this.getJedis().setex(turboKey.getCurKey(), getRealExpireSecond(), (String)data);
     }
 }

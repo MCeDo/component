@@ -2,7 +2,6 @@ package com.example.component.cache;
 
 import com.alibaba.fastjson.JSONObject;
 import com.example.component.cache.string.StringTurboCache;
-import com.example.component.cache.string.StringTurboCacheCommands;
 import org.junit.Test;
 
 /**
@@ -15,12 +14,13 @@ public class StringTurboCacheTest extends BaseTest {
     public void testStringTurboCache() {
         String testKey = "stringTurboCacheTest";
         String testValue = "String类型测试";
-        StringTurboCacheCommands stringCache = new StringTurboCache(60, new StringCacheRebuildExecutor());
+        StringCacheRebuildExecutor stringCacheRebuildExecutor = new StringCacheRebuildExecutor();
+        StringTurboCache stringCache = new StringTurboCache(60, stringCacheRebuildExecutor);
         TurboCacheResult<String> result = stringCache.get(testKey);
         if (result == null) {
             // 整体缓存过期，同步重建
             System.out.println("StringTurboCache 整体缓存过期");
-            stringCache.set(testKey, testValue, 20);
+            stringCache.init(testKey, 20);
             result = stringCache.get(testKey);
         }
 
@@ -31,8 +31,9 @@ public class StringTurboCacheTest extends BaseTest {
 
     public static class StringCacheRebuildExecutor implements CacheRebuildExecutor<String>{
         @Override
-        public String rebuildCache() {
-            return "StringTurboCache 逻辑缓存失效异步重建测试" + System.currentTimeMillis();
+        public String readDataExecute() {
+            return "StringTurboCache 逻辑缓存失效重建测试" + System.currentTimeMillis();
         }
+
     }
 }
