@@ -21,12 +21,11 @@ public class TurboCacheResult<T> {
      */
     private T data;
 
+    private boolean expire;
+
     /**
      * 当前版本生效缓存key信息
      */
     private TwinTurboKey twinTurboKey;
 
-    public boolean isExpire() {
-        return twinTurboKey.isExpire();
-    }
 }

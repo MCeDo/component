@@ -8,7 +8,7 @@ import com.example.component.cache.TurboCacheResult;
  */
 public interface StringTurboCacheCommands {
 
-    TurboCacheResult<String> get(String key);
+    TurboCacheResult<String> get();
 
-    void set(String key, String value, int expireSeconds);
+    void set(String value, int expireSeconds);
 }
