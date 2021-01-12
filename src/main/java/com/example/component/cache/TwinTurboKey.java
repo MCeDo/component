@@ -37,10 +37,15 @@ public class TwinTurboKey {
     private int cacheUpdateErrTimes;
 
     /**
+     * 是否过期
+     */
+    public Boolean expire;
+
+    /**
      * 当前版本缓存是否过期
      * @return
      */
-    public boolean isExpire() {
-        return (System.currentTimeMillis() - updateTime) > expireSeconds * 1000;
+    protected void setExpire() {
+        this.expire = (System.currentTimeMillis() - updateTime) > expireSeconds * 1000;
     }
 }

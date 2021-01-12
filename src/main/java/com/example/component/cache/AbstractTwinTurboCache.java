@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 import redis.clients.jedis.Jedis;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -68,7 +69,7 @@ public abstract class AbstractTwinTurboCache<T>{
                     .curKey(cacheKey + CACHE_A)
                     .build();
         }
-        LOGGER.info("switchCacheKey(cacheKey) method invoke, curCacheKey={}", JSONObject.toJSONString(curCacheKey));
+        LOGGER.info("switchCacheKey() method invoke, curCacheKey={}", JSONObject.toJSONString(curCacheKey));
         String switchKey = curCacheKey.getCurKey().equals(cacheKey + CACHE_A)
                 ? cacheKey + CACHE_B
                 : cacheKey + CACHE_A;
@@ -81,7 +82,7 @@ public abstract class AbstractTwinTurboCache<T>{
      * @param curCacheKey
      */
     public void updateTurboKey(TwinTurboKey curCacheKey) {
-        // TODO 加锁
+        // TODO 加锁，此处不加锁，由调用方控制处理加锁
         curCacheKey.setUpdateTime(System.currentTimeMillis());
         LOGGER.info("updateTurboKey method invoke, cacheKey={}, curCacheKey={}",
                 cacheKey,
@@ -100,9 +101,29 @@ public abstract class AbstractTwinTurboCache<T>{
         LOGGER.info("getCurCacheKey method invoke, cacheKey={}, twinTurboKey={}",
                 cacheKey,
                 value);
-        return StringUtils.isEmpty(value)
-                ? null
-                : JSONObject.parseObject(value, TwinTurboKey.class);
+        if (StringUtils.isEmpty(value)) {
+            return null;
+        }
+        TwinTurboKey twinTurboKey = JSONObject.parseObject(value, TwinTurboKey.class);
+        // 过期时间统一在此处判断，确保整个生命周期对过期的判断一致
+        twinTurboKey.setExpire();
+        return twinTurboKey;
+    }
+
+    /**
+     * 组装结果Bean，同时校验是否触发更新
+     * @param data
+     * @param twinTurboKey
+     * @return
+     */
+    protected TurboCacheResult<T> buildResultAndCheckRebuild(T data, TwinTurboKey twinTurboKey) {
+        TurboCacheResult<T> result = TurboCacheResult.<T>builder()
+                .data(data)
+                .expire(twinTurboKey.getExpire())
+                .twinTurboKey(getCurCacheKey())
+                .build();
+        this.asyncRebuildCacheAndSwitch(result);
+        return result;
     }
 
     protected void asyncRebuildCacheAndSwitch(TurboCacheResult turboCacheResult) {
@@ -133,7 +154,8 @@ public abstract class AbstractTwinTurboCache<T>{
     /**
      * 整体缓存失效，初始化
      */
-    public void init() {
+    public T init() {
+        // TODO init lock
         TwinTurboKey twinTurboKey = TwinTurboKey.builder()
                 .curKey(cacheKey + CACHE_A)
                 .expireSeconds(triggerRefreshSeconds)
@@ -142,8 +164,10 @@ public abstract class AbstractTwinTurboCache<T>{
                 cacheKey,
                 JSONObject.toJSONString(twinTurboKey));
         this.delCache(twinTurboKey);
-        this.rebuildCache(twinTurboKey, cacheRebuildExecutor.readDataExecute());
+        T data = cacheRebuildExecutor.readDataExecute();
+        this.rebuildCache(twinTurboKey, data);
         this.updateTurboKey(twinTurboKey);
+        return data;
     }
 
     /**

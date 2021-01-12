@@ -5,6 +5,8 @@ import com.example.component.cache.CacheRebuildExecutor;
 import com.example.component.cache.TurboCacheResult;
 import com.example.component.cache.TwinTurboKey;
 
+import java.util.Set;
+
 /**
  * String 双涡轮缓存工具
  * Author：cedo
@@ -30,24 +32,26 @@ public class StringTurboCache extends AbstractTwinTurboCache<String> implements 
         // 整体缓存物理过期
         if (curCacheKey == null) {
             LOGGER.info("StringTurboCache#get method invoke, key={}，整体缓存过期", this.getCacheKey());
-            return null;
+            String data = init();
+            return TurboCacheResult.<String>builder()
+                    .data(data)
+                    .expire(false)
+                    .twinTurboKey(getCurCacheKey())
+                    .build();
         }
         String data = getJedis().get(curCacheKey.getCurKey());
-        TurboCacheResult<String> result = new TurboCacheResult<>(
-                data, curCacheKey.isExpire(), curCacheKey
-        );
-        // 缓存数据是否过期，并做更新操作,需要实现CacheRebuildExecutor
-        this.asyncRebuildCacheAndSwitch(result);
-        return result;
+        return buildResultAndCheckRebuild(data, curCacheKey);
     }
 
     /**
      * set方法只对生效中的缓存操作，如：list类型的zadd操作，只对生效中的缓存追加
      * 缓存的切换和初始化由其他方法完成，不在这里处理
+     * 用途较小，待废弃
      * @param value
      * @param expireSeconds
      */
     @Override
+    @Deprecated
     public void set(String value, int expireSeconds) {
         // 当前生效中的key
         // TODO 这里的操作是否存在问题

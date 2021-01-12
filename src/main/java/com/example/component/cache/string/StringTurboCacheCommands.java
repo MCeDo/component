@@ -10,5 +10,6 @@ public interface StringTurboCacheCommands {
 
     TurboCacheResult<String> get();
 
+    @Deprecated
     void set(String value, int expireSeconds);
 }

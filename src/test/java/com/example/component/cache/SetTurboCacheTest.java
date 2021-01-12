@@ -16,7 +16,7 @@ public class SetTurboCacheTest extends BaseTest {
 
     @Test
     public void test() throws InterruptedException {
-        String testKey = "setTurboCacheTestV2";
+        String testKey = "setTurboCacheTest";
         SetTurboCache turboCache = new SetTurboCache(testKey, 15, 5, () -> {
             Map<String, Double> data = new HashMap<>();
             data.put("test1", 1d);
@@ -31,11 +31,9 @@ public class SetTurboCacheTest extends BaseTest {
             if (result == null) {
                 // 整体缓存过期，同步重建
                 System.out.println("SetTurboCache 整体缓存过期 ");
-                turboCache.init();
-                result = turboCache.zrange(0, -1);
             }
             System.out.println("SetTurboCache get方法测试，result ==> " + JSONObject.toJSONString(result));
-            Thread.sleep(1000);
+            Thread.sleep(2000);
         }
     }
 }

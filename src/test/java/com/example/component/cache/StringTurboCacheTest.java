@@ -23,8 +23,6 @@ public class StringTurboCacheTest extends BaseTest {
             if (result == null) {
                 // 整体缓存过期，同步重建
                 System.out.println("StringTurboCache 整体缓存过期");
-                stringCache.init();
-                result = stringCache.get();
             }
 
             System.out.println("StringTurboCache get方法测试，result ==> " + JSONObject.toJSONString(result));

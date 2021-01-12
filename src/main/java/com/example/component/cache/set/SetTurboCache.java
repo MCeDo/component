@@ -27,11 +27,17 @@ public class SetTurboCache extends AbstractTwinTurboCache<Map<String, Double>> {
     public TurboCacheResult<Set<String>> zrange(int start, int end) {
         TwinTurboKey twinTurboKey = getCurCacheKey();
         if (twinTurboKey == null) {
-            return null;
+            // sync init cache
+            Map<String, Double> data = init();
+            return TurboCacheResult.<Set<String>>builder()
+                    .data(data.keySet())
+                    .expire(false)
+                    .twinTurboKey(getCurCacheKey())
+                    .build();
         }
         Set<String> data = getJedis().zrange(twinTurboKey.getCurKey(), start, end);
         TurboCacheResult<Set<String>> result = new TurboCacheResult<>(
-                data, twinTurboKey.isExpire(), twinTurboKey
+                data, twinTurboKey.getExpire(), twinTurboKey
         );
         // 缓存数据是否过期，并做更新操作,需要实现CacheRebuildExecutor
         this.asyncRebuildCacheAndSwitch(result);
